@@ -1,8 +1,13 @@
 require 'docker'
 require 'nokogiri'
 require 'json'
-SECRET_KEY = '***********'
-ACCESS_KEY = '***********'
+require 'yaml'
+YAML.load(File.open('local_env.yml')).each do |key, value|
+    ENV[key.to_s] = value
+end
+SECRET_KEY = ENV['SECRET_KEY']
+ACCESS_KEY = ENV['ACCESS_KEY']
+Docker.url = 'tcp://localhost:2375'
 # make image with name grading
 image = Docker::Image.build_from_dir('.') do |v|
     if (log = JSON.parse(v)) && log.has_key?("stream")
@@ -10,19 +15,24 @@ image = Docker::Image.build_from_dir('.') do |v|
       end
 end
 
-tests = 'sternjtestbucket/test.zip'
-src = 'sternjtestbucket/alanadvorkin_PA07.zip'
+tests = 'auto-grader-capstone/Tests_PA07.zip'
+src = 'auto-grader-capstone/EliEsrig_elazare_PA07.zip'
 container = Docker::Container.create('Image' => image.id, 
-                  'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}"],
+                  'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}", "AWS_DEFAULT_REGION=us-east-1"],
                    'Cmd' => ['./unzip-and-grade.sh', src, tests],
                    'Tty' => true)
+
+container = Docker::Container.create('Image' => '668b495160f3', 
+                    'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}", "AWS_DEFAULT_REGION=us-east-1"],
+                    'Cmd' => ['./unzip-and-grade.sh', src, tests],
+                    'Tty' => true)
 puts "testing"
 container.tap(&:start).attach(:tty => true)
 xml = container.logs(stdout: true)
 puts 'tests done'
-
+# puts xml
 a = Nokogiri::XML(xml)
-
+# puts a
 testsuite = a.at_xpath('//testsuite')
 testcases = a.xpath('//testcase')
 

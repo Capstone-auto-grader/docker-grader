@@ -6,10 +6,13 @@ RUN apk -v --update add \
         groff \
         less \
         mailcap \
+        zip \
+        tree \ 
     && pip install --upgrade awscli \
     && apk -v --purge del py-pip \
     && rm /var/cache/apk/*
 COPY ./unzip-and-grade.sh / 
+COPY ./rename.py /
 RUN chmod +x unzip-and-grade.sh
 CMD ls
 
