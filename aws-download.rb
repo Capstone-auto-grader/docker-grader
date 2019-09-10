@@ -1,6 +1,8 @@
 require 'aws-sdk'
 require 'yaml'
 require 'docker'
+require 'json'
+
 puts 'aaa'
 # Docker.url = 'tcp://stravinsky.eastus.cloudapp.azure.com:2375'
 YAML.load(File.open('local_env.yml')).each do |key, value|
@@ -11,8 +13,8 @@ Excon.defaults[:read_timeout] = 1000
 
 SECRET_KEY = ENV['SECRET_KEY']
 ACCESS_KEY = ENV['ACCESS_KEY']
-tests = 'auto-grader-capstone/Tests_PA01_new.zip'
-src = 'auto-grader-capstone/afleishaker_fffffffffff_2170902_1547858703'
+src = "auto-grader-capstone/allenjin_Exam!!!_2541274_1557420278"
+tests = 'auto-grader-capstone/Exam_Tests.zip'
 # Aws.config.update({
 #     region: 'us-east-1',
 #     access_key_id: ENV['ACCESS_KEY'],
@@ -24,10 +26,10 @@ puts 'doin shit'
 
 # obj = S3_BUCKET.object('aaa.tar').presigned_url(:get, expires_in: 60)
 puts 'url shit'
-image = Docker::Image.build_from_dir('aaa')
+image = Docker::Image.build_from_dir('unzip-and-grade')
 puts image
 container = Docker::Container.create('Image' => image.id, 
-                  'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}"],
+                  'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}", '_JAVA_OPTIONS="-XX:MaxPermSize=512m -Xmx512m"'],
                    'Cmd' => ['./unzip-and-grade.sh', src, tests, 'aaaaa'],
                    'Tty' => true)
 
@@ -35,7 +37,10 @@ container = Docker::Container.create('Image' => image.id,
 #                   'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}"],
 #                    'Cmd' => ['bash', '-c', "aws s3 cp s3://#{src} a.zip && ls"],
 #                    'Tty' => true)
-container.tap(&:start).attach(:tty => true)
+puts container.tap(&:start).attach(:tty => true)
+# json = JSON.parse container.json
+
+puts container.json["State"]["ExitCode"]
 xml = container.logs(stdout: true)
 File.open('test.xml', 'w') do |file|
     file.write xml

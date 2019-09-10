@@ -1,1 +1,5 @@
 /local_env.yml
+*.tar
+*.zip
+*.xml
+tars/

@@ -1,5 +1,6 @@
-aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-aws configure set aws_secret_acces_key "$AWS_SECRET_ACCESS_KEY"
+# aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+# aws configure set aws_secret_acces_key "$AWS_SECRET_ACCESS_KEY"
+exitcode=0
 # echo $@
 aws s3 cp s3://"$1" src.zip  # 1>/dev/null
 aws s3 cp s3://"$2" test.zip # 1>/dev/null
@@ -10,28 +11,35 @@ mkdir test
 unzip src.zip -d './working-dir'  2>&1 1>/dev/null
 unzip test.zip -d './test' 2>&1 1>/dev/null
 
+tree test
+
 if [ -d working-dir/__MACOSX ]; then
     rm -rf working-dir/__MACOSX
 fi
 if [ -d test/__MACOSX ]; then
     rm -rf test/__MACOSX
 fi
-project_root="./working-dir/$(ls working-dir | sed 's/\///g' )"
 
+project_root="./working-dir/$(ls working-dir | sed 's/\///g' )"
+ls "$project_root/target/surefire-reports"
+rm "$project_root/target/surefire-reports/*"
 rm -r "$project_root/target/test-classes"
 rm -r "$project_root/src/test"/*
 # ls test
-cp -r  test/*/* "$project_root/src/test/"
-ls -a "$project_root"
+python3 copy-manifest.py './test' $project_root
+# cp -r  test/*/* "$project_root/src/test/"
+# ls -a "$project_root"
 
 # ls "$project_root/src/test/"
 cd "$project_root"      
+tree
 # pwd
 # ls target
 # ls src/test
 # tree
-mvn -Dtest=* test -Dmaven.compiler.failOnError=false 1>/dev/null
-
+a=$(mvn -Dtest=* test)
+echo $a
+rm -rf target/test-classes
 python ../../rename.py "$3"
 cd ..
 zip -r final.zip "$(ls | sed 's/\///g' )" 2>&1 1>/dev/null
@@ -39,5 +47,14 @@ aws s3 cp final.zip s3://"$1-ta-new" 1>/dev/null
 rm final.zip
 cd "$(ls | sed 's/\///g' )"
 ls -a target/surefire-reports
-cat target/surefire-reports/*.xml
+if [ ! -f target/surefire-reports/*.xml ]; then
+    exitcode=1
+fi
+if [[ $(echo $a | grep -i "no tests were executed") ]]; then
+    exitcode=2
+fi
+if [[ $exitcode != 0 ]]; then
+    exit $exitcode
+fi
 
+cat target/surefire-reports/*.xml

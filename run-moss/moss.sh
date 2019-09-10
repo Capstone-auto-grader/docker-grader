@@ -17,8 +17,9 @@ for uri in $@; do
     aws s3 cp s3://"$uri" "$new_uri".zip 1>/dev/null
     mkdir "to_eval/$new_uri"
     cd "to_eval/$new_uri"
-    unzip -o -j "../../$new_uri".zip  1>/dev/null
+    unzip -o -j "../../$new_uri".zip 1>/dev/null
     cd ../..
 done
 
+tree base_file
 # tree to_eval
