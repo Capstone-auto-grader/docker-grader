@@ -3,11 +3,14 @@ aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
 aws configure set aws_secret_acces_key "$AWS_SECRET_ACCESS_KEY"
 # echo $@ 1>&2
 mkdir base_file
-base_file=$1
-echo $1
-new_base=$(echo $base_file | cut -d / -f 2)
-aws s3 cp s3://"$base_file" "$new_base".zip
-unzip "$new_base".zip -d "base_file/$new_base"
+base_file=$(echo $1 | cut -d = -f 2)
+echo "BASE FILE $base_file"
+if [ $base_file != 'nil' ]; then
+    echo "FUCK THIS"
+    new_base=$(echo $base_file | cut -d / -f 2)
+    aws s3 cp s3://"$base_file" "$new_base".zip
+    unzip "$new_base".zip -d "base_file/$new_base"
+fi
 
 shift
 # mkdir to_eval
