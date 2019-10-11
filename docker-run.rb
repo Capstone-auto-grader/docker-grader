@@ -3,36 +3,45 @@ require 'nokogiri'
 require 'json'
 require 'yaml'
 YAML.load(File.open('local_env.yml')).each do |key, value|
-    ENV[key.to_s] = value
+    ENV[key.to_s] = value.to_s
 end
 SECRET_KEY = ENV['SECRET_KEY']
 ACCESS_KEY = ENV['ACCESS_KEY']
-Docker.url = 'tcp://localhost:2375'
+# Docker.url = 'tcp://localhost:2375'
 # make image with name grading
-image = Docker::Image.build_from_dir('.') do |v|
-    if (log = JSON.parse(v)) && log.has_key?("stream")
-        $stdout.puts log["stream"]
-      end
+image = Docker::Image.build_from_dir('unzip-and-grade') do |v|
+    puts v.inspect
+    logs = v.split("\n").map{ |x| JSON.parse(x) }
+    for log in logs
+        if log.has_key?("stream")
+            $stdout.puts log["stream"]
+        end
+    end
+    # if (log = JSON.parse(v)) && log.has_key?("stream")
+    #     $stdout.puts log["stream"]
+    # end
 end
 
-tests = 'auto-grader-capstone/Tests_PA07.zip'
-src = 'auto-grader-capstone/EliEsrig_elazare_PA07.zip'
+puts Docker::Image.exist?(image.id)
+
+tests = 'auto-grader-bucket/test.zip'
+src = 'auto-grader-bucket/submission.zip'
 container = Docker::Container.create('Image' => image.id, 
                   'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}", "AWS_DEFAULT_REGION=us-east-1"],
                    'Cmd' => ['./unzip-and-grade.sh', src, tests],
                    'Tty' => true)
 
-container = Docker::Container.create('Image' => '668b495160f3', 
-                    'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}", "AWS_DEFAULT_REGION=us-east-1"],
-                    'Cmd' => ['./unzip-and-grade.sh', src, tests],
-                    'Tty' => true)
+# container = Docker::Container.create('Image' => '668b495160f3', 
+#                     'Env' => ["AWS_SECRET_ACCESS_KEY=#{SECRET_KEY}", "AWS_ACCESS_KEY_ID=#{ACCESS_KEY}", "AWS_DEFAULT_REGION=us-east-1"],
+#                     'Cmd' => ['./unzip-and-grade.sh', src, tests],
+#                     'Tty' => true)
 puts "testing"
 container.tap(&:start).attach(:tty => true)
 xml = container.logs(stdout: true)
 puts 'tests done'
-# puts xml
+puts xml
 a = Nokogiri::XML(xml)
-# puts a
+puts a
 testsuite = a.at_xpath('//testsuite')
 testcases = a.xpath('//testcase')
 

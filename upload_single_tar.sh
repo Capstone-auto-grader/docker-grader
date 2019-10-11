@@ -6,4 +6,4 @@ DIR_TO_TAR=$3
 cd $DIR_TO_TAR
 tar -cvf "../$TAR_NAME" $(ls)
 cd ..
-aws s3 cp $TAR_NAME s3://"$OBJECT_PATH"
+# aws s3 cp $TAR_NAME s3://"$OBJECT_PATH"

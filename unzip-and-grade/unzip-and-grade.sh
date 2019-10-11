@@ -21,12 +21,13 @@ if [ -d test/__MACOSX ]; then
 fi
 
 project_root="./working-dir/$(ls working-dir | sed 's/\///g' )"
+echo "PROJECT ROOT $project_root"
 ls "$project_root/target/surefire-reports"
 rm "$project_root/target/surefire-reports/*"
 rm -r "$project_root/target/test-classes"
 rm -r "$project_root/src/test"/*
 # ls test
-python3 copy-manifest.py './test' $project_root
+python3 copy-manifest.py './test' "$project_root"
 # cp -r  test/*/* "$project_root/src/test/"
 # ls -a "$project_root"
 
@@ -36,14 +37,16 @@ cd "$project_root"
 # pwd
 # ls target
 # ls src/test
-# tree
+tree
 a=$(mvn -Dtest=AllSequentialTests test)
 echo $a
 rm -rf target/test-classes
 python ../../rename.py "$3"
 cd ..
+ls | sed 's/\///g'
 zip -r final.zip "$(ls | sed 's/\///g' )" 2>&1 1>/dev/null
 aws s3 cp final.zip s3://"$1-ta-new" 1>/dev/null
+ls
 rm final.zip
 cd "$(ls | sed 's/\///g' )"
 count=`ls -1 target/surefire-reports/*.xml 2>/dev/null | wc -l`
